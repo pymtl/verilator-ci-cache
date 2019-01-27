@@ -74,11 +74,10 @@ section).
 
      # Install verilator
 
-     - cd ${HOME}
      - wget https://github.com/cornell-brg/verilator-travisci-cache/raw/master/verilator-travis-4.008.tar.gz
-     - tar -xzf verilator-travis-4.008.tar.gz
+     - tar -C ${HOME} -xzf verilator-travis-4.008.tar.gz
      - export VERILATOR_ROOT=${HOME}/verilator
-     - export PATH=${VERILATOR_ROOT}/bin:$PATH
+     - export PATH=${VERILATOR_ROOT}/bin:${PATH}
      - export PYMTL_VERILATOR_INCLUDE_DIR=${VERILATOR_ROOT}/include
      - verilator --version
 
@@ -87,3 +86,4 @@ section).
      - pip -q install git+https://github.com/cornell-brg/pymtl.git
      - pip install --upgrade pytest
      - pip list
+
