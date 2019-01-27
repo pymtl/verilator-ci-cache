@@ -1,0 +1,31 @@
+#=========================================================================
+# TravisCI Setup
+#=========================================================================
+
+#------------------------------------------------------------------------
+# language and build matrix
+#------------------------------------------------------------------------
+
+language: c
+
+#------------------------------------------------------------------------
+# install dependencies
+#------------------------------------------------------------------------
+
+install:
+ - cd $HOME
+ - wget https://github.com/cornell-brg/verilator-travisci-cache/raw/master/verilator-travis-4.008.tar.gz
+ - tar -xvf verilator-travis-4.008.tar.gz
+ - export VERILATOR_ROOT=$HOME/verilator
+ - export PATH=$VERILATOR_ROOT/bin:$PATH
+ - which verilator
+ - verilator --version
+
+#------------------------------------------------------------------------
+# test runner
+#------------------------------------------------------------------------
+
+script:
+ - echo "done"
+
+
