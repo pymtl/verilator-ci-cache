@@ -78,7 +78,7 @@ section).
      - tar -C ${HOME} -xzf verilator-travis-4.008.tar.gz
      - export VERILATOR_ROOT=${HOME}/verilator
      - export PATH=${VERILATOR_ROOT}/bin:${PATH}
-     - export PYMTL_VERILATOR_INCLUDE_DIR=${VERILATOR_ROOT}/include
+     - export PYMTL_VERILATOR_INCLUDE_DIR=${VERILATOR_ROOT}/share/verilator/include
      - verilator --version
 
      # Install PyMTL
