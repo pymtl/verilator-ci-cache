@@ -15,7 +15,7 @@ language: c
 
 install:
  - cd $HOME
- - wget https://github.com/cornell-brg/verilator-travisci-cache/raw/master/verilator-travis-4.008.tar.gz
+ - wget https://github.com/cornell-brg/verilator-travisci-cache/raw/master/verilator-travis-4.026.tar.gz
  - tar -xvf verilator-travis-4.026.tar.gz
  - export VERILATOR_ROOT=$HOME/verilator
  - export PATH=$VERILATOR_ROOT/bin:$PATH
