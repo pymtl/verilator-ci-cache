@@ -15,8 +15,8 @@ language: c
 
 install:
  - cd $HOME
- - wget https://github.com/pymtl/verilator-travisci-cache/raw/master/verilator-travis-4.036.tar.gz
- - tar -xvf verilator-travis-4.036.tar.gz
+ - wget https://github.com/pymtl/verilator-travisci-cache/raw/master/verilator-github-actions-5.016.tar.gz
+ - tar -xvf verilator-github-actions-5.016.tar.gz
  - export VERILATOR_ROOT=$HOME/verilator
  - export PATH=$VERILATOR_ROOT/bin:$PATH
  - which verilator
