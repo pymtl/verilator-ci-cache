@@ -49,7 +49,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install -y graphviz
-          git clone git@github.com:pymtl/pymtl3
+          git clone https://github.com/pymtl/pymtl3
           cd pymtl3
           git checkout pymtl4.0-dev
           pip install --upgrade pip
