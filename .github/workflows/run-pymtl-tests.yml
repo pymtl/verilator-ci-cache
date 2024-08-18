@@ -15,14 +15,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        test_cmd:
-         - ../tut3_verilog
-         - ../lab1_imul
-         - ../lab2_proc
-         - ../lab3_mem
-         - ../lab4_sys
 
     steps:
       - uses: actions/checkout@v4
