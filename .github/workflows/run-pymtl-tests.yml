@@ -41,17 +41,24 @@ jobs:
 
       - name: Check verilator
         run: |
+          which verilator
           verilator --version
+          pkg-config --modversion verilator
+          pkg-config --cflags verilator
 
       - name: Install dependencies
         run: |
           sudo apt-get install -y graphviz
+          git clone git@github.com:pymtl/pymtl3
+          cd pymtl3
+          git checkout pymtl4.0-dev
           pip install --upgrade pip
-          pip install --requirement requirements/CI.txt
-          pip install .
+          pip install -r requirements.txt
+          pip install -e .
+          pip list
 
       - name: Run tests
         run: |
-          mkdir -p build && cd build
-          pytest ..
+          mkdir -p pymtl3/build && cd pymtl3/build
+          pytest ../pymtl3
 
