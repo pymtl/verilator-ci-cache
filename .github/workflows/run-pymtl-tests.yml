@@ -32,12 +32,12 @@ jobs:
 
       - name: Install verilator
         run: |
-          wget https://github.com/pymtl/verilator-ci-cache/raw/master/verilator-github-actions-5.026.tar.gz
+          wget --progress=dot:giga https://github.com/pymtl/verilator-ci-cache/raw/master/verilator-github-actions-5.026.tar.gz
           echo $PWD
           whoami
-          tar -xzf verilator-github-actions-5.026.tar.gz
+          tar -C ${HOME} -xzf verilator-github-actions-5.026.tar.gz
           echo "${HOME}/verilator/bin" >> $GITHUB_PATH
-          echo PKG_CONFIG_PATH="{HOME}/verilator/share/pkgconfig:${PKG_CONFIG_PATH}"
+          echo "PKG_CONFIG_PATH=${HOME}/verilator/share/pkgconfig:${PKG_CONFIG_PATH}" >> $GITHUB_ENV
 
       - name: Check verilator
         run: |
