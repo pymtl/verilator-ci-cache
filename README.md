@@ -1,89 +1,154 @@
 
-Verilator TravisCI Cache
+Verilator CI Cache
 ==========================================================================
 
-We need to use Verilator for PyMTL testing on TravisCI. We cannot use the
-default Ubuntu package for Verilator since the version available on
-TravisCI is way too old. However, building Verilator from scratch on
-every TravisCI run can take a significant amount of time. So this repo
-contains pre-build binaries for Verilator that we can simply download and
-use on TravisCI.
+We need to use Verilator for PyMTL testing on CI. We cannot use the
+default Ubuntu package for Verilator since the version available on CI is
+usually way too old. However, building Verilator from scratch on every CI
+run can take a significant amount of time. So this repo contains
+pre-built binaries for Verilator that we can simply download and use in
+our CI scripts.
 
 We need to make sure these binaries are built appropriately for use on
-TravisCI. The easiest way to do this is to launch an appropriate Amazon
-EC2 instance with the same Linux distribution that is being used on
-TravisCI. You can find out which version of Linux is being used on
-TravisCI by looking at the job log and expanding the "Build system
-information" section. For example:
+the specific CI service. The easiest way to do this is to launch an
+appropriate docker container which matches the Linux distribution we are
+using on the CI service. Here we assume we are using GitHub Actions and
+Ubuntu 22.04.
 
-    Operating System Details
-    Distributor ID:  Ubuntu
-    Description:     Ubuntu 14.04.5 LTS
-    Release:         14.04
-    Codename:        trusty
+First we need to create and launch the docker container.
 
-Launch an Amazon EC2 instance for "Ubuntu Server 14.04 LTS (HVM)", then
-log into this instances and build Verilator:
+```
+ % cat > Dockerfile \
+<<'END'
+FROM ubuntu:22.04
 
-    % sudo apt-get update
-    % sudo apt-get install git make autoconf g++ flex bison
-    % wget http://www.veripool.org/ftp/verilator-4.008.tgz
-    % tar -xzvf verilator-4.008.tgz
-    % cd verilator-4.008
-    % ./configure --prefix=${HOME}/verilator
-    % make
-    % make test
-    % make install
-    % export VERILATOR_ROOT=${HOME}/verilator
-    % export PATH=${VERILATOR_ROOT}/bin:$PATH
-    % cd ${HOME}
-    % which verilator
-    % verilator --version
+RUN apt-get update  -y \
+ && apt-get install -y \
+    wget \
+    git \
+    help2man \
+    perl \
+    python3 \
+    python3-pip \
+    make \
+    g++ \
+    libfl2 \
+    libfl-dev \
+    autoconf \
+    flex \
+    bison \
+    pkg-config \
+    graphviz
 
-Delete the debug binaries which are quite large, and then create a
-tarball with the pre-built installation.
+RUN useradd -ms /bin/bash runner
+USER runner
+WORKDIR /home/runner
 
-    % cd $HOME/verilator/bin
-    % rm -rf *_dbg
-    % cd $HOME
-    % tar -czvf verilator-travis-4.008.tar.gz verilator
+END
 
-Upload this tarball to this repo.
+ % docker build -t build-verilator-5.026 .
+ % docker run -it build-verilator-5.026 bash
+```
 
-    % git config --global user.email "email"
-    % git config --global user.name  "username"
-    % git clone https://github.com/cornell-brg/verilator-travisci-cache
-    % mv $HOME/verilator-travis-4.008.tar.gz verilator-travisci-cache
-    % cd verilator-travisci-cache
-    ... edit .travis.yml to build new version ...
-    % git add verilator-travis-4.008.tar.gz
-    % git commit -a -m "add verilator-travis-4.008.tar.gz"
-    % git push
+Now we need to build Verilator within the docker container. Notice how we
+delete the debug binaries since they are quite large.
 
-Verify that everything is working by looking at the TravisCI log for this
-repo. Then update your PyMTL repo to download this new version and verify
-all of the PyMTL tests are still passing. Here is a minimal `.travis.yml`
-file for a PyMTL project (you would need to add your own `script`
-section).
+```
+ docker % cd ${HOME}
+ docker % wget https://github.com/verilator/verilator/archive/refs/tags/v5.026.tar.gz
+ docker % tar -xzvf v5.026.tar.gz
+ docker % rm -rf v5.026.tar.gz
+ docker % cd verilator-5.026
+ docker % autoconf
+ docker % ./configure --prefix=${HOME}/verilator
+ docker % make -j8
+ docker % make install
 
-    language: python
-    python:
-     - "2.7"
+ docker % export PATH="${HOME}/verilator/bin:${PATH}"
+ docker % export PKG_CONFIG_PATH="${HOME}/verilator/share/pkgconfig:${PKG_CONFIG_PATH}"
 
-    install:
+ docker % cd ${HOME}
+ docker % which verilator
+ /root/verilator/bin/verilator
+ % verilator --version
+ Verilator 5.026 2024-06-15 rev UNKNOWN.REV
 
-     # Install verilator
+ docker % pkg-config --modversion verilator
+ 5.026
+ docker % pkg-config --cflags verilator
+ -I/root/verilator/share/verilator/include
+ -I/root/verilator/share/verilator/include/vltstd
 
-     - wget https://github.com/cornell-brg/verilator-travisci-cache/raw/master/verilator-travis-4.008.tar.gz
-     - tar -C ${HOME} -xzf verilator-travis-4.008.tar.gz
-     - export VERILATOR_ROOT=${HOME}/verilator
-     - export PATH=${VERILATOR_ROOT}/bin:${PATH}
-     - export PYMTL_VERILATOR_INCLUDE_DIR=${VERILATOR_ROOT}/share/verilator/include
-     - verilator --version
+ docker % cd ${HOME}/verilator/bin
+ docker % rm -rf *_dbg
+ docker % cd ${HOME}/verilator/share/verilator/bin
+ docker % rm -rf *_dbg
+```
 
-     # Install PyMTL
+Now we can run a very simple Verilator test.
 
-     - pip -q install git+https://github.com/cornell-brg/pymtl.git
-     - pip install --upgrade pytest
-     - pip list
+```
+ docker % mkdir -p ${HOME}/test
+ docker % cd ${HOME}/test
+ docker % cat > top.v \
+<<'END'
+ module top;
+   initial begin
+     $display("Hello World");
+     $finish;
+   end
+ endmodule
+END
+
+ docker % cat > verilator-test.cc \
+<<'END'
+ #include "Vtop.h"
+ #include "verilated.h"
+ int main( int argc, char** argv, char** env )
+ {
+   Verilated::commandArgs( argc, argv );
+   Vtop* top = new Vtop;
+   while ( !Verilated::gotFinish() ) {
+     top->eval();
+   }
+   delete top;
+   exit(0);
+ }
+END
+
+ docker % verilator -Wall --cc top.v --exe verilator-test.cc
+ docker % make -j -C obj_dir -f Vtop.mk Vtop
+ docker % obj_dir/Vtop
+```
+
+Finally we want to create the tarball.
+
+```
+ docker % cd ${HOME}
+ docker % tar -czvf verilator-github-actions-5.026.tar.gz verilator
+```
+
+We can copy the tarball from the container using a second terminal (where
+CONTAINERID is the id of the container we are using to build verilator).
+
+```
+ % mkdir -p ${HOME}/vc/git-hub/pymtl
+ % cd ${HOME}/vc/git-hub/pymtl
+ % git clone git@github.com:pymtl/verilator-ci-cache
+ % cd verilator-ci-cache
+ % docker container ls
+ % docker cp CONTAINERID:/home/runner/verilator-github-actions-5.026.tar.gz .
+ % git add verilator-github-actions-5.026.tar.gz
+ % git commit -a -m "add verilator-github-actions-5.026.tar.gz"
+ % git push
+```
+
+Finally go ahead exit the container.
+
+```
+ docker % exit
+``
+
+This repo includes a GitHub Action workflow to illustrate how to use the
+Verilator CI cache to run all of the PyMTL3 tests.
 
