@@ -1,0 +1,55 @@
+#=========================================================================
+# run-pymtl-tests.yml
+#=========================================================================
+# This workflow illustrates how to use the verilator-ci-cache with
+# GitHub actions to run pymtl3 tests.
+
+name: Python package
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        test_cmd:
+         - ../tut3_verilog
+         - ../lab1_imul
+         - ../lab2_proc
+         - ../lab3_mem
+         - ../lab4_sys
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install verilator
+        run: |
+          wget https://github.com/cornell-brg/verilator-ci-cache/raw/master/verilator-github-actions-5.026.tar.gz
+          tar -xzf verilator-github-actions-5.016.tar.gz
+          echo "${HOME}/verilator/bin" >> $GITHUB_PATH
+          echo PKG_CONFIG_PATH="{HOME}/verilator/share/pkgconfig:${PKG_CONFIG_PATH}"
+
+      - name: Check verilator
+        run: |
+          verilator --version
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y graphviz
+          pip install --upgrade pip
+          pip install --requirement requirements/CI.txt
+          pip install .
+
+      - name: Run tests
+        run: |
+          mkdir -p build && cd build
+          pytest ..
+
